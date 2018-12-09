@@ -94,6 +94,17 @@ public class BaseActivity extends PeekViewActivity
         }
     }
 
+    public void showDecor() {
+        try {
+            if (!SettingValues.immersiveMode) {
+                final View decorView = getWindow().getDecorView();
+                decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+                decorView.setOnSystemUiVisibilityChangeListener(null);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -473,7 +484,7 @@ public class BaseActivity extends PeekViewActivity
             if (title == null || title.equals("")) title = getString(R.string.app_name);
 
             Bitmap bitmap= BitmapFactory.decodeResource(getResources(),(  title.equalsIgnoreCase("androidcirclejerk") ? R.drawable.matiasduarte
-                    : R.mipmap.ic_launcher));
+                    : R.drawable.ic_launcher));
 
             setTaskDescription(
                     new ActivityManager.TaskDescription(title, bitmap, color));

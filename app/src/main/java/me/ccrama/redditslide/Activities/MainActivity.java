@@ -53,11 +53,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.ViewDragHelper;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.view.ContextThemeWrapper;
-import android.support.v7.widget.AppCompatCheckBox;
-import android.support.v7.widget.CardView;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.PopupMenu;
-import android.support.v7.widget.Toolbar;
+import android.support.v7.widget.*;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.TextWatcher;
@@ -500,7 +496,7 @@ public class MainActivity extends BaseActivity
                 return super.dispatchKeyEvent(event);
             }
         }
-        if (event.getAction() != KeyEvent.ACTION_DOWN) return true;
+        if (event.getAction() != KeyEvent.ACTION_DOWN) return super.dispatchKeyEvent(event);
         switch (keyCode) {
             case KeyEvent.KEYCODE_SEARCH:
                 return onKeyDown(keyCode, event);
@@ -1348,8 +1344,8 @@ public class MainActivity extends BaseActivity
             restartTheme(); //force a restart because we should not be here
         }
 
-        if ((!inNightMode && SettingValues.isNight()) || (inNightMode
-                && !SettingValues.isNight())) {
+        if ((!inNightMode && SettingValues.isNight()) || (inNightMode && !SettingValues.isNight())) {
+            ((SwitchCompat) drawerLayout.findViewById(R.id.toggle_night_mode)).setChecked(SettingValues.isNight());
             restartTheme();
         }
         checkClipboard();
@@ -1433,7 +1429,7 @@ public class MainActivity extends BaseActivity
         if (keyCode == KeyEvent.KEYCODE_SEARCH) {
             return onOptionsItemSelected(menu.findItem(R.id.search));
         }
-        return false;
+        return super.onKeyDown(keyCode, event);
     }
 
     public static String abbreviate(final String str, final int maxWidth) {
@@ -1637,8 +1633,6 @@ public class MainActivity extends BaseActivity
             }
             final ArrayList<String> keys = new ArrayList<>(accounts.keySet());
 
-            final String guest = getString(R.string.guest);
-            keys.add(guest);
             final LinearLayout accountList = header.findViewById(R.id.accountsarea);
             for (final String accName : keys) {
                 LogUtil.v(accName);
@@ -1647,93 +1641,89 @@ public class MainActivity extends BaseActivity
                                 false);
                 ((TextView) t.findViewById(R.id.name)).setText(accName);
                 LogUtil.v("Adding click to " + ((TextView) t.findViewById(R.id.name)).getText());
-                if (!accName.equals(guest)) {
-                    t.findViewById(R.id.remove).setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
+                t.findViewById(R.id.remove).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
 
-                            new AlertDialogWrapper.Builder(MainActivity.this).setTitle(R.string.profile_remove)
-                                    .setMessage(R.string.profile_remove_account)
-                                    .setNegativeButton(R.string.btn_delete, new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog2, int which2) {
-                                            Set<String> accounts2 = Authentication.authentication.getStringSet(
-                                                    "accounts", new HashSet<String>());
-                                            Set<String> done = new HashSet<>();
-                                            for (String s : accounts2) {
-                                                if (!s.contains(accName)) {
-                                                    done.add(s);
-                                                }
-                                            }
-                                            Authentication.authentication.edit()
-                                                    .putStringSet("accounts", done)
-                                                    .commit();
-                                            dialog2.dismiss();
-                                            accountList.removeView(t);
-                                            if (accName.equalsIgnoreCase(Authentication.name)) {
-
-                                                boolean d = false;
-                                                for (String s : keys) {
-
-                                                    if (!s.equalsIgnoreCase(accName)) {
-                                                        d = true;
-                                                        LogUtil.v("Switching to " + s);
-                                                        for(Map.Entry<String, String> e : accounts.entrySet()){
-                                                            LogUtil.v(e.getKey() + ":" + e.getValue());
-                                                        }
-                                                        if (accounts.containsKey(s) && !accounts.get(s)
-                                                                .isEmpty()) {
-                                                            Authentication.authentication.edit()
-                                                                    .putString("lasttoken", accounts.get(s))
-                                                                    .remove("backedCreds")
-                                                                    .commit();
-                                                        } else {
-                                                            ArrayList<String> tokens = new ArrayList<>(
-                                                                    Authentication.authentication.getStringSet(
-                                                                            "tokens", new HashSet<String>()));
-                                                            int index = keys.indexOf(s);
-                                                            if (keys.indexOf(s) > tokens.size()) {
-                                                                index -= 1;
-                                                            }
-                                                            Authentication.authentication.edit()
-                                                                    .putString("lasttoken",
-                                                                            tokens.get(index))
-                                                                    .remove("backedCreds")
-                                                                    .commit();
-                                                        }
-                                                        Authentication.name = s;
-                                                        UserSubscriptions.switchAccounts();
-                                                        Reddit.forceRestart(MainActivity.this, true);
-                                                        break;
-                                                    }
-
-                                                }
-                                                if (!d) {
-                                                    Authentication.name = "LOGGEDOUT";
-                                                    Authentication.isLoggedIn = false;
-                                                    Authentication.authentication.edit()
-                                                            .remove("lasttoken")
-                                                            .remove("backedCreds")
-                                                            .commit();
-                                                    UserSubscriptions.switchAccounts();
-                                                    Reddit.forceRestart(MainActivity.this, true);
-                                                }
-
-                                            } else {
-                                                accounts.remove(accName);
-                                                keys.remove(accName);
+                        new AlertDialogWrapper.Builder(MainActivity.this).setTitle(R.string.profile_remove)
+                                .setMessage(R.string.profile_remove_account)
+                                .setNegativeButton(R.string.btn_delete, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog2, int which2) {
+                                        Set<String> accounts2 = Authentication.authentication.getStringSet(
+                                                "accounts", new HashSet<String>());
+                                        Set<String> done = new HashSet<>();
+                                        for (String s : accounts2) {
+                                            if (!s.contains(accName)) {
+                                                done.add(s);
                                             }
                                         }
-                                    })
-                                    .setPositiveButton(R.string.btn_cancel, null)
-                                    .show();
+                                        Authentication.authentication.edit()
+                                                .putStringSet("accounts", done)
+                                                .commit();
+                                        dialog2.dismiss();
+                                        accountList.removeView(t);
+                                        if (accName.equalsIgnoreCase(Authentication.name)) {
+
+                                            boolean d = false;
+                                            for (String s : keys) {
+
+                                                if (!s.equalsIgnoreCase(accName)) {
+                                                    d = true;
+                                                    LogUtil.v("Switching to " + s);
+                                                    for(Map.Entry<String, String> e : accounts.entrySet()){
+                                                        LogUtil.v(e.getKey() + ":" + e.getValue());
+                                                    }
+                                                    if (accounts.containsKey(s) && !accounts.get(s)
+                                                            .isEmpty()) {
+                                                        Authentication.authentication.edit()
+                                                                .putString("lasttoken", accounts.get(s))
+                                                                .remove("backedCreds")
+                                                                .commit();
+                                                    } else {
+                                                        ArrayList<String> tokens = new ArrayList<>(
+                                                                Authentication.authentication.getStringSet(
+                                                                        "tokens", new HashSet<String>()));
+                                                        int index = keys.indexOf(s);
+                                                        if (keys.indexOf(s) > tokens.size()) {
+                                                            index -= 1;
+                                                        }
+                                                        Authentication.authentication.edit()
+                                                                .putString("lasttoken",
+                                                                        tokens.get(index))
+                                                                .remove("backedCreds")
+                                                                .commit();
+                                                    }
+                                                    Authentication.name = s;
+                                                    UserSubscriptions.switchAccounts();
+                                                    Reddit.forceRestart(MainActivity.this, true);
+                                                    break;
+                                                }
+
+                                            }
+                                            if (!d) {
+                                                Authentication.name = "LOGGEDOUT";
+                                                Authentication.isLoggedIn = false;
+                                                Authentication.authentication.edit()
+                                                        .remove("lasttoken")
+                                                        .remove("backedCreds")
+                                                        .commit();
+                                                UserSubscriptions.switchAccounts();
+                                                Reddit.forceRestart(MainActivity.this, true);
+                                            }
+
+                                        } else {
+                                            accounts.remove(accName);
+                                            keys.remove(accName);
+                                        }
+                                    }
+                                })
+                                .setPositiveButton(R.string.btn_cancel, null)
+                                .show();
 
 
-                        }
-                    });
-                } else {
-                    t.findViewById(R.id.remove).setVisibility(View.GONE);
-                }
+                    }
+                });
                 t.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -1741,30 +1731,21 @@ public class MainActivity extends BaseActivity
                         LogUtil.v("Found name is " + accName);
                         if (!accName.equalsIgnoreCase(Authentication.name)) {
                             LogUtil.v("Switching to " + accName);
-                            if (!accName.equals(guest)) {
-                                if (!accounts.get(accName).isEmpty()) {
-                                    LogUtil.v("Using token " + accounts.get(accName));
-                                    Authentication.authentication.edit()
-                                            .putString("lasttoken", accounts.get(accName))
-                                            .remove("backedCreds")
-                                            .apply();
-                                } else {
-                                    ArrayList<String> tokens = new ArrayList<>(
-                                            Authentication.authentication.getStringSet("tokens", new HashSet<String>()));
-                                    Authentication.authentication.edit()
-                                            .putString("lasttoken", tokens.get(keys.indexOf(accName)))
-                                            .remove("backedCreds")
-                                            .apply();
-                                }
-                                Authentication.name = accName;
-                            } else {
-                                Authentication.name = "LOGGEDOUT";
-                                Authentication.isLoggedIn = false;
+                            if (!accounts.get(accName).isEmpty()) {
+                                LogUtil.v("Using token " + accounts.get(accName));
                                 Authentication.authentication.edit()
-                                        .remove("lasttoken")
+                                        .putString("lasttoken", accounts.get(accName))
+                                        .remove("backedCreds")
+                                        .apply();
+                            } else {
+                                ArrayList<String> tokens = new ArrayList<>(
+                                        Authentication.authentication.getStringSet("tokens", new HashSet<String>()));
+                                Authentication.authentication.edit()
+                                        .putString("lasttoken", tokens.get(keys.indexOf(accName)))
                                         .remove("backedCreds")
                                         .apply();
                             }
+                            Authentication.name = accName;
 
                             UserSubscriptions.switchAccounts();
 
@@ -1787,6 +1768,20 @@ public class MainActivity extends BaseActivity
                         collapse(body);
                         flipAnimator(true, view).start();
                     }
+                }
+            });
+
+            header.findViewById(R.id.guest_mode).setOnClickListener(new OnSingleClickListener() {
+                @Override
+                public void onSingleClick(View v) {
+                    Authentication.name = "LOGGEDOUT";
+                    Authentication.isLoggedIn = false;
+                    Authentication.authentication.edit()
+                            .remove("lasttoken")
+                            .remove("backedCreds")
+                            .apply();
+                    UserSubscriptions.switchAccounts();
+                    Reddit.forceRestart(MainActivity.this, true);
                 }
             });
 
@@ -1851,8 +1846,6 @@ public class MainActivity extends BaseActivity
             }
             final ArrayList<String> keys = new ArrayList<>(accounts.keySet());
 
-            final String guest = getString(R.string.guest);
-            keys.add(guest);
             final LinearLayout accountList = header.findViewById(R.id.accountsarea);
             for (final String accName : keys) {
                 LogUtil.v(accName);
@@ -1860,84 +1853,80 @@ public class MainActivity extends BaseActivity
                         getLayoutInflater().inflate(R.layout.account_textview_white, accountList,
                                 false);
                 ((TextView) t.findViewById(R.id.name)).setText(accName);
-                if (!accName.equals(guest)) {
-                    t.findViewById(R.id.remove).setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
+                t.findViewById(R.id.remove).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
 
-                            new AlertDialogWrapper.Builder(MainActivity.this).setTitle(R.string.profile_remove)
-                                    .setMessage(R.string.profile_remove_account)
-                                    .setNegativeButton(R.string.btn_delete, new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog2, int which2) {
-                                            Set<String> accounts2 = Authentication.authentication.getStringSet(
-                                                    "accounts", new HashSet<String>());
-                                            Set<String> done = new HashSet<>();
-                                            for (String s : accounts2) {
-                                                if (!s.contains(accName)) {
-                                                    done.add(s);
-                                                }
+                        new AlertDialogWrapper.Builder(MainActivity.this).setTitle(R.string.profile_remove)
+                                .setMessage(R.string.profile_remove_account)
+                                .setNegativeButton(R.string.btn_delete, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog2, int which2) {
+                                        Set<String> accounts2 = Authentication.authentication.getStringSet(
+                                                "accounts", new HashSet<String>());
+                                        Set<String> done = new HashSet<>();
+                                        for (String s : accounts2) {
+                                            if (!s.contains(accName)) {
+                                                done.add(s);
                                             }
-                                            Authentication.authentication.edit()
-                                                    .putStringSet("accounts", done)
-                                                    .commit();
-                                            dialog2.dismiss();
-                                            accountList.removeView(t);
+                                        }
+                                        Authentication.authentication.edit()
+                                                .putStringSet("accounts", done)
+                                                .commit();
+                                        dialog2.dismiss();
+                                        accountList.removeView(t);
 
-                                            if (accName.equalsIgnoreCase(Authentication.name)) {
-                                                boolean d = false;
-                                                for (String s : keys) {
-                                                    if (!s.equalsIgnoreCase(accName)) {
-                                                        d = true;
-                                                        LogUtil.v("Switching to " + s);
-                                                        if (!accounts.get(s).isEmpty()) {
-                                                            Authentication.authentication.edit()
-                                                                    .putString("lasttoken", accounts.get(s))
-                                                                    .remove("backedCreds")
-                                                                    .commit();
+                                        if (accName.equalsIgnoreCase(Authentication.name)) {
+                                            boolean d = false;
+                                            for (String s : keys) {
+                                                if (!s.equalsIgnoreCase(accName)) {
+                                                    d = true;
+                                                    LogUtil.v("Switching to " + s);
+                                                    if (!accounts.get(s).isEmpty()) {
+                                                        Authentication.authentication.edit()
+                                                                .putString("lasttoken", accounts.get(s))
+                                                                .remove("backedCreds")
+                                                                .commit();
 
-                                                        } else {
-                                                            ArrayList<String> tokens = new ArrayList<>(
-                                                                    Authentication.authentication.getStringSet(
-                                                                            "tokens", new HashSet<String>()));
-                                                            Authentication.authentication.edit()
-                                                                    .putString("lasttoken", tokens.get(
-                                                                            keys.indexOf(s)))
-                                                                    .remove("backedCreds")
-                                                                    .commit();
-                                                        }
-                                                        Authentication.name = s;
-                                                        UserSubscriptions.switchAccounts();
-                                                        Reddit.forceRestart(MainActivity.this, true);
+                                                    } else {
+                                                        ArrayList<String> tokens = new ArrayList<>(
+                                                                Authentication.authentication.getStringSet(
+                                                                        "tokens", new HashSet<String>()));
+                                                        Authentication.authentication.edit()
+                                                                .putString("lasttoken", tokens.get(
+                                                                        keys.indexOf(s)))
+                                                                .remove("backedCreds")
+                                                                .commit();
                                                     }
-                                                }
-                                                if (!d) {
-                                                    Authentication.name = "LOGGEDOUT";
-                                                    Authentication.isLoggedIn = false;
-                                                    Authentication.authentication.edit()
-                                                            .remove("lasttoken")
-                                                            .remove("backedCreds")
-                                                            .commit();
+                                                    Authentication.name = s;
                                                     UserSubscriptions.switchAccounts();
                                                     Reddit.forceRestart(MainActivity.this, true);
                                                 }
-                                            } else {
-                                                accounts.remove(accName);
-                                                keys.remove(accName);
                                             }
+                                            if (!d) {
+                                                Authentication.name = "LOGGEDOUT";
+                                                Authentication.isLoggedIn = false;
+                                                Authentication.authentication.edit()
+                                                        .remove("lasttoken")
+                                                        .remove("backedCreds")
+                                                        .commit();
+                                                UserSubscriptions.switchAccounts();
+                                                Reddit.forceRestart(MainActivity.this, true);
+                                            }
+                                        } else {
+                                            accounts.remove(accName);
+                                            keys.remove(accName);
                                         }
-                                    })
-                                    .setPositiveButton(R.string.btn_cancel, null)
-                                    .show();
-                        }
-                    });
-                } else {
-                    t.findViewById(R.id.remove).setVisibility(View.GONE);
-                }
+                                    }
+                                })
+                                .setPositiveButton(R.string.btn_cancel, null)
+                                .show();
+                    }
+                });
                 t.setOnClickListener(new OnSingleClickListener() {
                     @Override
                     public void onSingleClick(View v) {
-                        if (!accName.equalsIgnoreCase(Authentication.name) && !accName.equals(guest)) {
+                        if (!accName.equalsIgnoreCase(Authentication.name)) {
                             if (!accounts.get(accName).isEmpty()) {
                                 Authentication.authentication.edit()
                                         .putString("lasttoken", accounts.get(accName))
@@ -2026,6 +2015,85 @@ public class MainActivity extends BaseActivity
             });
 
         }
+
+        final LinearLayout expandSettings = header.findViewById(R.id.expand_settings);
+        header.findViewById(R.id.godown_settings).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (expandSettings.getVisibility() == View.GONE) {
+                    expand(expandSettings);
+                    flipAnimator(false, v).start();
+                } else {
+                    collapse(expandSettings);
+                    flipAnimator(true, v).start();
+                }
+            }
+        });
+
+        {   // Set up quick setting toggles
+            final SwitchCompat toggleNightMode = expandSettings.findViewById(R.id.toggle_night_mode);
+            if (SettingValues.isPro) {
+                toggleNightMode.setVisibility(View.VISIBLE);
+                toggleNightMode.setChecked(inNightMode);
+                toggleNightMode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                        SettingValues.forcedNightModeState = isChecked
+                                ? SettingValues.ForcedState.FORCED_ON
+                                : SettingValues.ForcedState.FORCED_OFF;
+                        restartTheme();
+                    }
+                });
+            }
+
+            final SwitchCompat toggleImmersiveMode = expandSettings.findViewById(R.id.toggle_immersive_mode);
+            toggleImmersiveMode.setChecked(SettingValues.immersiveMode);
+            toggleImmersiveMode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    SettingValues.immersiveMode = isChecked;
+                    SettingValues.prefs.edit().putBoolean(SettingValues.PREF_IMMERSIVE_MODE, isChecked).apply();
+                    if (isChecked) {
+                        hideDecor();
+                    } else {
+                        showDecor();
+                    }
+                }
+            });
+
+            final SwitchCompat toggleNSFW = expandSettings.findViewById(R.id.toggle_nsfw);
+            toggleNSFW.setChecked(SettingValues.showNSFWContent);
+            toggleNSFW.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    SettingValues.showNSFWContent = isChecked;
+                    SettingValues.prefs.edit().putBoolean(SettingValues.PREF_SHOW_NSFW_CONTENT, isChecked).apply();
+                    reloadSubs();
+                }
+            });
+
+            final SwitchCompat toggleRightThumbnails = expandSettings.findViewById(R.id.toggle_right_thumbnails);
+            toggleRightThumbnails.setChecked(SettingValues.switchThumb);
+            toggleRightThumbnails.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    SettingValues.switchThumb = isChecked;
+                    SettingValues.prefs.edit().putBoolean(SettingValues.PREF_SWITCH_THUMB, isChecked).apply();
+                    reloadSubs();
+                }
+            });
+
+            final SwitchCompat toggleReaderMode = expandSettings.findViewById(R.id.toggle_reader_mode);
+            toggleReaderMode.setChecked(SettingValues.readerMode);
+            toggleReaderMode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    SettingValues.readerMode = isChecked;
+                    SettingValues.prefs.edit().putBoolean(SettingValues.PREF_READER_MODE, isChecked).apply();
+                }
+            });
+        }
+
         header.findViewById(R.id.manage).setOnClickListener(new OnSingleClickListener() {
             @Override
             public void onSingleClick(View view) {
@@ -3263,7 +3331,7 @@ public class MainActivity extends BaseActivity
                         }
                     }
                 };
-                currentFlair.execute(dialoglayout.findViewById(R.id.flair));
+                currentFlair.execute((View) dialoglayout.findViewById(R.id.flair));
             }
         } else {
             if (drawerLayout != null) {
