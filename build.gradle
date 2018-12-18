@@ -16,6 +16,10 @@ buildscript {
     }
 }
 
+plugins {
+    id 'org.sonarqube' version '2.6.2'
+}
+
 allprojects {
     repositories {
         jcenter()
@@ -23,6 +27,14 @@ allprojects {
         maven { url "https://jitpack.io" }
         maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 
+    }
+}
+
+sonarqube {
+    properties {
+        property 'sonar.language', 'java'
+        property 'sonar.sources', 'src/main/java/me/ccrama/redditslide'
+        property 'sonar.tests', 'src/test/java/me/ccrama/redditslide/test'
     }
 }
 
